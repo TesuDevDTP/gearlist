@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GearList">
+<meta name="theme-color" content="#1a6e78" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#01696f" media="(prefers-color-scheme: light)">
+<link rel="manifest" href="./manifest.json">
+<link rel="apple-touch-icon" href="./icons/icon.svg">
+<title>GearList</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── TOKENS ─────────────────────────────────────── */
+:root {
+  --bg:#171614; --surf:#1c1b19; --surf2:#222120; --surf3:#2a2927;
+  --div:#2e2d2b; --bdr:#3d3c3a;
+  --tx:#d4d3d1; --txm:#7c7b79; --txf:#4e4d4b;
+  --pri:#4f98a3; --prih:#227f8b; --prib:rgba(79,152,163,.14);
+  --ok:#6daa45; --okb:rgba(109,170,69,.13);
+  --err:#d163a7; --warn:#fdab43;
+  --r4:.25rem; --r8:.5rem; --r12:.75rem; --r16:1rem; --r20:1.25rem; --r99:99px;
+  --sh1:0 1px 3px rgba(0,0,0,.35); --sh2:0 4px 16px rgba(0,0,0,.4);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+  --safe-l: env(safe-area-inset-left, 0px);
+  --safe-r: env(safe-area-inset-right, 0px);
+  --font:'Inter',system-ui,-apple-system,sans-serif;
+  --nav-h:58px;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:#f2f1ed; --surf:#faf9f6; --surf2:#fff; --surf3:#edeae5;
+    --div:#dbd9d5; --bdr:#c8c6c0;
+    --tx:#1e1c16; --txm:#78756f; --txf:#b0ada8;
+    --pri:#01696f; --prih:#0c4e54; --prib:rgba(1,105,111,.1);
+    --ok:#437a22; --okb:rgba(67,122,34,.1);
+    --err:#a12c7b; --warn:#da7101;
+    --sh1:0 1px 3px rgba(0,0,0,.07); --sh2:0 4px 16px rgba(0,0,0,.1);
+  }
+}
+
+/* ── RESET ──────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;overflow:hidden;touch-action:manipulation}
+body{
+  font-family:var(--font);background:var(--bg);color:var(--tx);
+  height:100%;overflow:hidden;
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;
+  overscroll-behavior:none;
+}
+button{cursor:pointer;background:none;border:none;font:inherit;color:inherit;touch-action:manipulation}
+input{font:inherit;color:inherit;border:none;outline:none;background:none}
+img{display:block;max-width:100%}
+
+/* ── APP SHELL ──────────────────────────────────── */
+#app {
+  display:flex;flex-direction:column;
+  height:100dvh;
+  padding-top:var(--safe-top);
+  padding-left:var(--safe-l);
+  padding-right:var(--safe-r);
+  padding-bottom:var(--safe-bot);
+  position:relative;overflow:hidden;
+}
+
+/* ── TOP NAV ────────────────────────────────────── */
+.topbar {
+  flex-shrink:0;
+  height:var(--nav-h);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 16px;
+  background:var(--surf);
+  border-bottom:1px solid var(--div);
+  position:relative;z-index:10;
+}
+.topbar-left{display:flex;align-items:center;gap:10px}
+.app-icon{width:34px;height:34px;background:var(--pri);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.app-title{font-size:17px;font-weight:700;letter-spacing:-.02em;line-height:1}
+.app-date{font-size:11px;color:var(--txm);margin-top:1px}
+.topbar-right{display:flex;gap:6px}
+.icon-btn{
+  width:36px;height:36px;border-radius:var(--r12);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--txm);background:var(--surf3);
+  transition:all .15s ease;
+  -webkit-active{background:var(--bdr)}
+}
+.icon-btn:active{background:var(--bdr);color:var(--tx);transform:scale(.92)}
+
+/* ── SCROLL AREA ────────────────────────────────── */
+.scroll-area {
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior-y:contain;
+  padding:12px 14px 20px;
+}
+.scroll-area::-webkit-scrollbar{display:none}
+
+/* ── STATS ROW ──────────────────────────────────── */
+.stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
+.stat{
+  background:var(--surf);border:1px solid var(--bdr);
+  border-radius:var(--r16);padding:11px 8px;text-align:center;
+  box-shadow:var(--sh1);
+}
+.stat-n{font-size:22px;font-weight:700;line-height:1;letter-spacing:-.02em}
+.stat-n.ok{color:var(--ok)}.stat-n.pri{color:var(--pri)}.stat-n.warn{color:var(--warn)}
+.stat-l{font-size:10px;color:var(--txm);margin-top:3px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+
+/* ── PROGRESS ───────────────────────────────────── */
+.prog-wrap{margin-bottom:14px}
+.prog-top{display:flex;justify-content:space-between;font-size:12px;color:var(--txm);margin-bottom:5px;font-weight:500}
+.prog-bg{height:5px;background:var(--surf3);border-radius:var(--r99)}
+.prog-fill{height:100%;background:var(--pri);border-radius:var(--r99);transition:width .5s cubic-bezier(.16,1,.3,1)}
+.prog-fill.complete{background:var(--ok)}
+
+/* ── FILTER TABS ────────────────────────────────── */
+.tabs{
+  display:flex;gap:5px;margin-bottom:14px;
+  background:var(--surf);border:1px solid var(--bdr);
+  border-radius:var(--r16);padding:4px;
+}
+.tab{
+  flex:1;padding:8px 4px;border-radius:var(--r12);
+  font-size:12px;font-weight:600;color:var(--txm);
+  text-align:center;transition:all .15s ease;
+}
+.tab.on{background:var(--pri);color:#fff;box-shadow:var(--sh1)}
+.tab:active:not(.on){background:var(--surf3)}
+
+/* ── SECTION ────────────────────────────────────── */
+.section-wrap{margin-bottom:20px}
+.section-head{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 4px 10px;
+}
+.s-emoji{font-size:18px;line-height:1}
+.s-name{font-size:14px;font-weight:700;flex:1;letter-spacing:-.01em}
+.s-badge{
+  font-size:11px;font-weight:600;color:var(--txm);
+  background:var(--surf);border:1px solid var(--bdr);
+  padding:2px 8px;border-radius:var(--r99);
+}
+.s-del{
+  width:26px;height:26px;border-radius:var(--r8);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--txf);transition:all .15s;
+}
+.s-del:active{background:rgba(209,99,167,.15);color:var(--err);transform:scale(.9)}
+
+/* ── ITEM CARD ──────────────────────────────────── */
+.item{
+  display:flex;align-items:center;gap:10px;
+  padding:13px 14px;
+  background:var(--surf);border:1px solid var(--bdr);
+  border-radius:var(--r16);margin-bottom:6px;
+  box-shadow:var(--sh1);
+  transition:border-color .15s,background .15s,transform .1s;
+  cursor:pointer;user-select:none;position:relative;
+  overflow:hidden;
+}
+.item::before{
+  content:'';position:absolute;inset:0;background:transparent;
+  transition:background .1s;
+}
+.item:active::before{background:rgba(255,255,255,.04)}
+.item.done{background:var(--okb);border-color:rgba(109,170,69,.3)}
+@media (prefers-color-scheme:light){
+  .item.done{background:rgba(67,122,34,.07);border-color:rgba(67,122,34,.22)}
+}
+
+.chk{
+  width:26px;height:26px;border-radius:8px;
+  border:2.5px solid var(--bdr);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .15s cubic-bezier(.16,1,.3,1);
+  background:var(--surf3);
+}
+.item.done .chk{background:var(--ok);border-color:var(--ok)}
+.chk svg{opacity:0;transform:scale(.5);transition:all .2s cubic-bezier(.16,1,.3,1)}
+.item.done .chk svg{opacity:1;transform:scale(1)}
+
+.iinfo{flex:1;min-width:0;pointer-events:none}
+.iname{font-size:14px;font-weight:500;line-height:1.3;transition:color .15s}
+.item.done .iname{color:var(--txm);text-decoration:line-through;text-decoration-color:var(--bdr)}
+.inote{font-size:11px;color:var(--txf);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+.qty{
+  display:flex;align-items:center;gap:4px;
+  flex-shrink:0;pointer-events:all;
+}
+.qbtn{
+  width:30px;height:30px;border-radius:50%;
+  background:var(--surf3);border:1px solid var(--bdr);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;line-height:1;color:var(--txm);
+  transition:all .12s;flex-shrink:0;
+}
+.qbtn:active{background:var(--pri);color:#fff;border-color:var(--pri);transform:scale(.88)}
+.qval{min-width:24px;text-align:center;font-size:14px;font-weight:700}
+
+.idel{
+  width:28px;height:28px;flex-shrink:0;
+  border-radius:var(--r8);display:flex;align-items:center;justify-content:center;
+  color:var(--txf);transition:all .12s;
+}
+.idel:active{color:var(--err);background:rgba(209,99,167,.15);transform:scale(.88)}
+
+/* ── ADD ITEM ROW ───────────────────────────────── */
+.add-row{
+  display:flex;gap:6px;padding:10px 12px;
+  background:var(--surf);border:1px solid var(--bdr);
+  border-radius:var(--r16);margin-bottom:6px;
+  box-shadow:var(--sh1);
+}
+.add-inp{
+  flex:1;font-size:14px;background:transparent;
+  color:var(--tx);caret-color:var(--pri);
+}
+.add-inp::placeholder{color:var(--txf)}
+.add-go{
+  background:var(--pri);color:#fff;
+  border-radius:var(--r12);padding:8px 14px;
+  font-size:13px;font-weight:600;
+  transition:all .12s;
+}
+.add-go:active{background:var(--prih);transform:scale(.94)}
+
+/* ── EMPTY ──────────────────────────────────────── */
+.empty{
+  text-align:center;padding:50px 20px;
+  color:var(--txm);
+}
+.empty-ei{font-size:52px;margin-bottom:14px}
+.empty h3{font-size:16px;font-weight:700;color:var(--tx);margin-bottom:6px}
+.empty p{font-size:13px;line-height:1.5}
+
+.empty-filter{
+  text-align:center;padding:20px;
+  color:var(--txf);font-size:13px;
+}
+
+/* ── ADD CAT BTN ────────────────────────────────── */
+.add-cat{
+  width:100%;padding:14px;
+  border:2px dashed var(--bdr);border-radius:var(--r16);
+  color:var(--txm);font-size:13px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:all .15s;margin-bottom:8px;
+}
+.add-cat:active{border-color:var(--pri);color:var(--pri);background:var(--prib);transform:scale(.98)}
+
+/* ── RESET BTN ──────────────────────────────────── */
+.reset-btn{
+  width:100%;padding:12px;
+  border:1px solid var(--bdr);border-radius:var(--r16);
+  color:var(--txm);font-size:13px;font-weight:500;
+  transition:all .15s;
+}
+.reset-btn:active{border-color:var(--err);color:var(--err);background:rgba(209,99,167,.08)}
+
+/* ── BOTTOM NAV ─────────────────────────────────── */
+.bottom-nav{
+  flex-shrink:0;
+  height:var(--nav-h);
+  display:flex;
+  background:var(--surf);
+  border-top:1px solid var(--div);
+  padding:0 8px;
+}
+.bnav-item{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:8px 4px;
+  color:var(--txm);font-size:10px;font-weight:600;
+  border-radius:var(--r12);transition:all .15s;
+  letter-spacing:.02em;text-transform:uppercase;
+}
+.bnav-item.on{color:var(--pri)}
+.bnav-item:active{background:var(--surf3);transform:scale(.92)}
+.bnav-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+
+/* ── SHEET / MODAL ──────────────────────────────── */
+.overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.6);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity .2s;
+  -webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px);
+}
+.overlay.on{opacity:1;pointer-events:all}
+.sheet{
+  background:var(--surf);
+  border-radius:24px 24px 0 0;
+  width:100%;max-width:520px;
+  padding:20px 18px calc(20px + var(--safe-bot));
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(.16,1,.3,1);
+  max-height:82dvh;overflow-y:auto;
+}
+.overlay.on .sheet{transform:translateY(0)}
+.sheet-handle{width:36px;height:4px;background:var(--bdr);border-radius:var(--r99);margin:0 auto 18px}
+.sheet-title{font-size:18px;font-weight:700;margin-bottom:16px;letter-spacing:-.02em}
+.sheet-inp{
+  width:100%;background:var(--surf3);
+  border:1.5px solid var(--bdr);border-radius:var(--r16);
+  padding:13px 15px;font-size:16px;
+  transition:border-color .15s;margin-bottom:14px;
+  color:var(--tx);
+  -webkit-appearance:none;
+}
+.sheet-inp:focus{border-color:var(--pri)}
+.emojis{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:18px}
+.e-btn{
+  width:44px;height:44px;border-radius:var(--r12);font-size:22px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--surf3);border:2px solid transparent;
+  transition:all .12s;
+}
+.e-btn.on{border-color:var(--pri);background:var(--prib)}
+.e-btn:active{transform:scale(.88)}
+.sheet-btns{display:flex;gap:10px}
+.s-cancel{
+  flex:1;padding:13px;border-radius:var(--r16);
+  border:1.5px solid var(--bdr);font-size:15px;font-weight:600;
+  color:var(--txm);transition:all .12s;
+}
+.s-cancel:active{background:var(--surf3)}
+.s-ok{
+  flex:2;padding:13px;border-radius:var(--r16);
+  background:var(--pri);color:#fff;font-size:15px;font-weight:700;
+  transition:all .12s;
+}
+.s-ok:active{background:var(--prih);transform:scale(.97)}
+
+/* ── HISTORY PAGE ───────────────────────────────── */
+#page-history{ display:none }
+#page-history.on{ display:flex;flex-direction:column;height:100%;overflow:hidden }
+.hist-scroll{ flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 14px 20px }
+.hist-scroll::-webkit-scrollbar{display:none}
+.day-card{
+  background:var(--surf);border:1px solid var(--bdr);
+  border-radius:var(--r16);margin-bottom:10px;overflow:hidden;
+}
+.day-head{
+  display:flex;align-items:center;gap:10px;
+  padding:13px 14px;cursor:pointer;user-select:none;
+}
+.day-head:active{background:var(--surf3)}
+.day-date{flex:1;font-size:14px;font-weight:600}
+.day-pct{font-size:13px;font-weight:700;color:var(--pri)}
+.day-chevron{color:var(--txf);transition:transform .2s}
+.day-chevron.open{transform:rotate(180deg)}
+.day-items{display:none;border-top:1px solid var(--div);padding:10px 14px 12px}
+.day-items.open{display:block}
+.day-item{
+  display:flex;align-items:center;gap:8px;
+  padding:6px 0;border-bottom:1px solid var(--div);
+  font-size:13px;
+}
+.day-item:last-child{border-bottom:none}
+.day-chk{width:16px;height:16px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:2px solid var(--bdr)}
+.day-chk.ok{background:var(--ok);border-color:var(--ok)}
+.day-item-name{flex:1;color:var(--tx)}
+.day-item-qty{font-size:11px;color:var(--txm);font-weight:600}
+
+/* ── TOAST ──────────────────────────────────────── */
+.toast{
+  position:fixed;bottom:calc(var(--nav-h) + 12px + var(--safe-bot));
+  left:50%;transform:translateX(-50%) translateY(10px);
+  background:var(--ok);color:#fff;
+  padding:10px 20px;border-radius:var(--r99);
+  font-size:13px;font-weight:600;white-space:nowrap;
+  opacity:0;transition:all .25s cubic-bezier(.16,1,.3,1);
+  pointer-events:none;z-index:300;
+  box-shadow:var(--sh2);
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── INSTALL BANNER ─────────────────────────────── */
+.install-banner{
+  margin:0 0 12px;
+  background:var(--prib);border:1px solid rgba(79,152,163,.3);
+  border-radius:var(--r16);padding:12px 14px;
+  display:flex;align-items:center;gap:10px;
+}
+.install-banner p{flex:1;font-size:12px;color:var(--tx);line-height:1.4}
+.install-banner strong{color:var(--pri)}
+.install-close{color:var(--txm);padding:4px;border-radius:var(--r8)}
+.install-close:active{color:var(--tx)}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- PAGE: CHECKLIST -->
+  <div id="page-home" style="display:flex;flex-direction:column;height:100%;overflow:hidden">
+
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="app-icon">🎬</div>
+        <div>
+          <div class="app-title">GearList</div>
+          <div class="app-date" id="top-date">--</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <button class="icon-btn" onclick="openSheet()" aria-label="Thêm danh mục">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="scroll-area" id="scroll-area">
+      <div id="install-wrap"></div>
+
+      <div class="stats">
+        <div class="stat"><div class="stat-n ok" id="s-done">0</div><div class="stat-l">Đã tick</div></div>
+        <div class="stat"><div class="stat-n pri" id="s-total">0</div><div class="stat-l">Tổng mục</div></div>
+        <div class="stat"><div class="stat-n warn" id="s-qty">0</div><div class="stat-l">Thiết bị</div></div>
+      </div>
+
+      <div class="prog-wrap">
+        <div class="prog-top"><span>Tiến độ</span><span id="prog-pct">0%</span></div>
+        <div class="prog-bg"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      </div>
+
+      <div class="tabs">
+        <div class="tab on" onclick="setTab('all',this)">Tất cả</div>
+        <div class="tab" onclick="setTab('pending',this)">Chưa tick</div>
+        <div class="tab" onclick="setTab('done',this)">Đã tick</div>
+      </div>
+
+      <div id="items-area"></div>
+
+      <button class="add-cat" onclick="openSheet()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+        Thêm danh mục
+      </button>
+      <button class="reset-btn" onclick="resetAll()">↺ Reset về chưa tick</button>
+    </div>
+
+    <div class="bottom-nav">
+      <div class="bnav-item on" onclick="goPage('home',this)">
+        <div class="bnav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        Hôm nay
+      </div>
+      <div class="bnav-item" onclick="goPage('history',this)">
+        <div class="bnav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        Lịch sử
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: HISTORY -->
+  <div id="page-history">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="app-icon" style="background:var(--surf3);color:var(--txm)">📅</div>
+        <div>
+          <div class="app-title">Lịch sử</div>
+          <div class="app-date">Các buổi quay trước</div>
+        </div>
+      </div>
+    </div>
+    <div class="hist-scroll" id="hist-area"></div>
+    <div class="bottom-nav">
+      <div class="bnav-item" onclick="goPage('home',this)">
+        <div class="bnav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        </div>
+        Hôm nay
+      </div>
+      <div class="bnav-item on" onclick="goPage('history',this)">
+        <div class="bnav-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        Lịch sử
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SHEET: ADD CATEGORY -->
+<div class="overlay" id="overlay" onclick="outsideClose(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-title">Thêm danh mục mới</div>
+    <input class="sheet-inp" id="cat-inp" placeholder="Tên danh mục..." maxlength="40" autocomplete="off">
+    <div class="emojis" id="emoji-grid"></div>
+    <div class="sheet-btns">
+      <button class="s-cancel" onclick="closeSheet()">Huỷ</button>
+      <button class="s-ok" onclick="confirmCat()">Thêm</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════════
+//  INDEXEDDB
+// ════════════════════════════════════════════════════
+const DB_NAME='GearListDB', DB_VER=2;
+let db=null;
+
+function openDB(){
+  return new Promise((res,rej)=>{
+    const req=indexedDB.open(DB_NAME,DB_VER);
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains('sections'))
+        d.createObjectStore('sections',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('history'))
+        d.createObjectStore('history',{keyPath:'date'});
+    };
+    req.onsuccess=e=>{ db=e.target.result; res(db); };
+    req.onerror=e=>rej(e);
+  });
+}
+
+function dbGet(store,key){
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(store,'readonly');
+    const r=tx.objectStore(store).get(key);
+    r.onsuccess=()=>res(r.result);
+    r.onerror=rej;
+  });
+}
+function dbGetAll(store){
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(store,'readonly');
+    const r=tx.objectStore(store).getAll();
+    r.onsuccess=()=>res(r.result);
+    r.onerror=rej;
+  });
+}
+function dbPut(store,val){
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(store,'readwrite');
+    const r=tx.objectStore(store).put(val);
+    r.onsuccess=()=>res();
+    r.onerror=rej;
+  });
+}
+function dbDelete(store,key){
+  return new Promise((res,rej)=>{
+    const tx=db.transaction(store,'readwrite');
+    const r=tx.objectStore(store).delete(key);
+    r.onsuccess=()=>res();
+    r.onerror=rej;
+  });
+}
+
+// ════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════
+const EMOJIS=['📷','🎥','🎬','🎤','💡','🔋','🎚️','📡','🖥️','💻','🎒','🔌','🎞️','📽️','🎙️','🧰','🔧','🔭','🕹️','🧲'];
+let secs=[], selEmoji='📷', curTab='all', curPage='home';
+
+const TODAY=new Date().toISOString().slice(0,10);
+
+const DEFAULT=[
+  {id:'cam',icon:'📷',title:'Máy quay & Pin',items:[
+    {id:'a1',name:'Sony FX3',note:'Body chính',qty:1,done:false},
+    {id:'a2',name:'Sony A7 IV',note:'Backup / B-cam',qty:1,done:false},
+    {id:'a3',name:'Pin NP-FZ100',note:'Sạc đầy trước',qty:4,done:false},
+    {id:'a4',name:'Bộ sạc đôi',note:'',qty:1,done:false},
+    {id:'a5',name:'Thẻ nhớ CFexpress 128GB',note:'Cho FX3',qty:2,done:false},
+    {id:'a6',name:'Thẻ nhớ SD V60 64GB',note:'Backup',qty:2,done:false},
+  ]},
+  {id:'lens',icon:'🔭',title:'Ống kính & Filter',items:[
+    {id:'b1',name:'Sony 16-35mm f/2.8 GM',note:'Wide',qty:1,done:false},
+    {id:'b2',name:'Sony 24-70mm f/2.8 GM II',note:'Standard zoom',qty:1,done:false},
+    {id:'b3',name:'Sony 85mm f/1.4 GM',note:'Portrait',qty:1,done:false},
+    {id:'b4',name:'Filter ND Variable 2-400',note:'77mm',qty:2,done:false},
+    {id:'b5',name:'Lens pen + khăn lau',note:'',qty:1,done:false},
+  ]},
+  {id:'stab',icon:'🎬',title:'Gimbal & Stabilizer',items:[
+    {id:'c1',name:'DJI RS 3 Pro',note:'Gimbal chính',qty:1,done:false},
+    {id:'c2',name:'Pin USB-C Gimbal',note:'Sạc đầy',qty:2,done:false},
+    {id:'c3',name:'Quick Release Plate',note:'Kiểm tra vít',qty:2,done:false},
+  ]},
+  {id:'audio',icon:'🎤',title:'Âm thanh',items:[
+    {id:'d1',name:'Rode Wireless GO II',note:'TX + RX',qty:1,done:false},
+    {id:'d2',name:'Rode NTG5 Shotgun',note:'',qty:1,done:false},
+    {id:'d3',name:'Boom Pole',note:'',qty:1,done:false},
+    {id:'d4',name:'Pin AA',note:'Cho mic dự phòng',qty:8,done:false},
+    {id:'d5',name:'Cáp XLR 5m',note:'',qty:2,done:false},
+  ]},
+  {id:'light',icon:'💡',title:'Đèn & Phụ kiện',items:[
+    {id:'e1',name:'Aputure 300x',note:'Key light',qty:1,done:false},
+    {id:'e2',name:'Amaran 60x S',note:'Fill light',qty:1,done:false},
+    {id:'e3',name:'RGB LED Panel',note:'Background',qty:2,done:false},
+    {id:'e4',name:'Softbox Octa 90cm',note:'',qty:1,done:false},
+    {id:'e5',name:'Pin V-mount',note:'Sạc đầy',qty:4,done:false},
+    {id:'e6',name:'Chân đèn',note:'',qty:3,done:false},
+  ]},
+  {id:'support',icon:'🎒',title:'Chân máy & Hỗ trợ',items:[
+    {id:'f1',name:'Tripod Manfrotto 536',note:'',qty:1,done:false},
+    {id:'f2',name:'Fluid Head',note:'',qty:1,done:false},
+    {id:'f3',name:'Monopod',note:'',qty:1,done:false},
+  ]},
+  {id:'tech',icon:'💻',title:'Tech & Lưu trữ',items:[
+    {id:'g1',name:'MacBook Pro',note:'Backup on-set',qty:1,done:false},
+    {id:'g2',name:'HDD Seagate 2TB',note:'',qty:2,done:false},
+    {id:'g3',name:'SSD Samsung T7 1TB',note:'Working drive',qty:1,done:false},
+    {id:'g4',name:'Cáp USB-C',note:'',qty:3,done:false},
+    {id:'g5',name:'Cáp HDMI 2.1',note:'',qty:2,done:false},
+  ]},
+];
+
+// ════════════════════════════════════════════════════
+//  SAVE / LOAD
+// ════════════════════════════════════════════════════
+async function loadToday(){
+  const rec=await dbGet('history',TODAY);
+  if(rec){ secs=rec.sections; }
+  else {
+    // load template sections (without done state)
+    const tmpl=await dbGetAll('sections');
+    if(tmpl&&tmpl.length>0){
+      secs=tmpl.map(s=>({...s,items:s.items.map(i=>({...i,done:false}))}));
+    } else {
+      secs=DEFAULT.map(s=>({...s,items:s.items.map(i=>({...i,done:false}))}));
+      // save as template
+      for(const s of secs) await dbPut('sections',s);
+    }
+  }
+}
+
+async function saveToday(){
+  await dbPut('history',{date:TODAY,sections:secs,savedAt:new Date().toISOString()});
+}
+
+// ════════════════════════════════════════════════════
+//  RENDER CHECKLIST
+// ════════════════════════════════════════════════════
+function render(){
+  const area=document.getElementById('items-area');
+  area.innerHTML='';
+
+  let totalItems=0,doneItems=0,allQty=0;
+  secs.forEach(s=>{
+    totalItems+=s.items.length;
+    doneItems+=s.items.filter(i=>i.done).length;
+    allQty+=s.items.reduce((a,i)=>a+i.qty,0);
+  });
+  document.getElementById('s-done').textContent=doneItems;
+  document.getElementById('s-total').textContent=totalItems;
+  document.getElementById('s-qty').textContent=allQty;
+  const pct=totalItems?Math.round(doneItems/totalItems*100):0;
+  document.getElementById('prog-pct').textContent=pct+'%';
+  const fill=document.getElementById('prog-fill');
+  fill.style.width=pct+'%';
+  fill.className='prog-fill'+(pct===100?' complete':'');
+
+  if(secs.length===0){
+    area.innerHTML='<div class="empty"><div class="empty-ei">🎬</div><h3>Chưa có danh mục</h3><p>Nhấn nút + để thêm danh mục thiết bị</p></div>';
+    return;
+  }
+
+  let hasAny=false;
+  secs.forEach(sec=>{
+    const filtered=sec.items.filter(i=>{
+      if(curTab==='pending') return !i.done;
+      if(curTab==='done') return i.done;
+      return true;
+    });
+    if(curTab!=='all'&&filtered.length===0) return;
+    hasAny=true;
+
+    const wrap=document.createElement('div');
+    wrap.className='section-wrap';
+
+    const secDone=sec.items.filter(i=>i.done).length;
+    wrap.innerHTML=`<div class="section-head">
+      <span class="s-emoji">${sec.icon}</span>
+      <span class="s-name">${esc(sec.title)}</span>
+      <span class="s-badge">${secDone}/${sec.items.length}</span>
+      <button class="s-del" onclick="delSec('${sec.id}')" aria-label="Xoá danh mục">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+      </button>
+    </div>`;
+
+    filtered.forEach(item=>{
+      const card=document.createElement('div');
+      card.className='item'+(item.done?' done':'');
+      card.innerHTML=`
+        <div class="chk">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        <div class="iinfo">
+          <div class="iname">${esc(item.name)}</div>
+          ${item.note?`<div class="inote">${esc(item.note)}</div>`:''}
+        </div>
+        <div class="qty" onclick="event.stopPropagation()">
+          <button class="qbtn" onclick="chgQty('${sec.id}','${item.id}',-1)" aria-label="Giảm">−</button>
+          <span class="qval">${item.qty}</span>
+          <button class="qbtn" onclick="chgQty('${sec.id}','${item.id}',1)" aria-label="Tăng">+</button>
+        </div>
+        <button class="idel" onclick="event.stopPropagation();delItem('${sec.id}','${item.id}')" aria-label="Xoá">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+        </button>`;
+      card.querySelector('.chk').parentElement.addEventListener('click',()=>toggleItem(sec.id,item.id));
+      // only the card itself (not qty/del) toggles
+      card.onclick=function(e){
+        if(e.target.closest('.qty')||e.target.closest('.idel')) return;
+        toggleItem(sec.id,item.id);
+      };
+      wrap.appendChild(card);
+    });
+
+    if(curTab==='all'){
+      const ar=document.createElement('div');
+      ar.className='add-row';
+      ar.innerHTML=`<input class="add-inp" id="inp-${sec.id}" placeholder="Thêm thiết bị..." maxlength="50" autocomplete="off">
+        <button class="add-go" onclick="addItem('${sec.id}')">Thêm</button>`;
+      ar.querySelector('.add-inp').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); addItem(sec.id); } });
+      wrap.appendChild(ar);
+    }
+
+    area.appendChild(wrap);
+  });
+
+  if(!hasAny&&curTab!=='all'){
+    area.innerHTML='<div class="empty-filter">Không có mục nào ở bộ lọc này</div>';
+  }
+}
+
+function esc(s){ const d=document.createElement('div');d.textContent=s;return d.innerHTML; }
+
+// ════════════════════════════════════════════════════
+//  ACTIONS
+// ════════════════════════════════════════════════════
+async function toggleItem(sid,iid){
+  const s=secs.find(x=>x.id===sid), item=s.items.find(x=>x.id===iid);
+  item.done=!item.done;
+  await saveToday(); render();
+  const total=secs.reduce((a,s)=>a+s.items.length,0);
+  const done=secs.reduce((a,s)=>a+s.items.filter(i=>i.done).length,0);
+  if(done===total&&total>0) toast('🎉 Chuẩn bị xong tất cả!');
+}
+
+async function chgQty(sid,iid,d){
+  const s=secs.find(x=>x.id===sid), item=s.items.find(x=>x.id===iid);
+  item.qty=Math.max(1,item.qty+d);
+  await saveToday(); render();
+}
+
+async function addItem(sid){
+  const inp=document.getElementById('inp-'+sid);
+  const name=(inp?.value||'').trim();
+  if(!name) return;
+  const s=secs.find(x=>x.id===sid);
+  const newItem={id:'x'+Date.now(),name,note:'',qty:1,done:false};
+  s.items.push(newItem);
+  inp.value='';
+  await saveToday(); render();
+  setTimeout(()=>{ const el=document.getElementById('inp-'+sid); el?.focus(); },80);
+}
+
+async function delItem(sid,iid){
+  const s=secs.find(x=>x.id===sid);
+  s.items=s.items.filter(i=>i.id!==iid);
+  await saveToday(); render();
+}
+
+async function delSec(sid){
+  if(!confirm('Xoá danh mục này?')) return;
+  secs=secs.filter(s=>s.id!==sid);
+  await dbDelete('sections',sid);
+  await saveToday(); render();
+}
+
+async function resetAll(){
+  if(!confirm('Reset tất cả về chưa tick?')) return;
+  secs.forEach(s=>s.items.forEach(i=>i.done=false));
+  await saveToday(); render(); toast('↺ Đã reset checklist');
+}
+
+function setTab(tab,btn){
+  curTab=tab;
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  render();
+}
+
+// ════════════════════════════════════════════════════
+//  SHEET
+// ════════════════════════════════════════════════════
+function openSheet(){
+  buildEmojis();
+  document.getElementById('overlay').classList.add('on');
+  setTimeout(()=>document.getElementById('cat-inp').focus(),300);
+}
+function closeSheet(){ document.getElementById('overlay').classList.remove('on'); }
+function outsideClose(e){ if(e.target.id==='overlay') closeSheet(); }
+function buildEmojis(){
+  document.getElementById('emoji-grid').innerHTML=EMOJIS.map(e=>`
+    <button class="e-btn${e===selEmoji?' on':''}" onclick="pickEmoji('${e}')" type="button">${e}</button>`).join('');
+}
+function pickEmoji(e){ selEmoji=e; buildEmojis(); }
+
+async function confirmCat(){
+  const name=document.getElementById('cat-inp').value.trim();
+  if(!name){ document.getElementById('cat-inp').focus(); return; }
+  const newSec={id:'cat'+Date.now(),icon:selEmoji,title:name,items:[]};
+  secs.push(newSec);
+  await dbPut('sections',newSec);
+  await saveToday();
+  document.getElementById('cat-inp').value='';
+  closeSheet(); render();
+  toast('✅ Đã thêm "'+name+'"');
+}
+
+// ════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════
+function goPage(page, btn){
+  curPage=page;
+  document.getElementById('page-home').style.display = page==='home'?'flex':'none';
+  const hist=document.getElementById('page-history');
+  hist.style.display='none'; hist.classList.remove('on');
+  if(page==='history'){ hist.style.display='flex'; hist.classList.add('on'); renderHistory(); }
+  document.querySelectorAll('.bnav-item').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+}
+
+// ════════════════════════════════════════════════════
+//  HISTORY
+// ════════════════════════════════════════════════════
+async function renderHistory(){
+  const area=document.getElementById('hist-area');
+  area.innerHTML='<div style="padding:20px;text-align:center;color:var(--txm);font-size:13px">Đang tải...</div>';
+  const all=await dbGetAll('history');
+  if(!all||all.length===0){
+    area.innerHTML='<div class="empty"><div class="empty-ei">📅</div><h3>Chưa có lịch sử</h3><p>Dữ liệu sẽ được lưu tự động theo ngày</p></div>';
+    return;
+  }
+  all.sort((a,b)=>b.date.localeCompare(a.date));
+  area.innerHTML='';
+  all.forEach(rec=>{
+    const total=rec.sections.reduce((a,s)=>a+s.items.length,0);
+    const done=rec.sections.reduce((a,s)=>a+s.items.filter(i=>i.done).length,0);
+    const pct=total?Math.round(done/total*100):0;
+    const dateObj=new Date(rec.date+'T00:00:00');
+    const dateStr=dateObj.toLocaleDateString('vi-VN',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+    const isToday=rec.date===TODAY;
+    const card=document.createElement('div');
+    card.className='day-card';
+    card.innerHTML=`<div class="day-head" onclick="toggleDay(this)">
+      <div class="day-date">${isToday?'📍 Hôm nay':'📅 '+dateStr}</div>
+      <div class="day-pct">${done}/${total} · ${pct}%</div>
+      <svg class="day-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="day-items">
+      ${rec.sections.map(s=>s.items.map(i=>`
+        <div class="day-item">
+          <div class="day-chk${i.done?' ok':''}">
+            ${i.done?'<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><path d="M20 6L9 17l-5-5"/></svg>':''}
+          </div>
+          <span class="day-item-name">${esc(s.icon+' '+i.name)}</span>
+          <span class="day-item-qty">x${i.qty}</span>
+        </div>`).join('')).join('')}
+    </div>`;
+    area.appendChild(card);
+  });
+}
+
+function toggleDay(head){
+  const items=head.nextElementSibling;
+  const chev=head.querySelector('.day-chevron');
+  const open=items.classList.toggle('open');
+  chev.classList.toggle('open',open);
+}
+
+// ════════════════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════════════════
+let _tt;
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('on');
+  clearTimeout(_tt); _tt=setTimeout(()=>t.classList.remove('on'),2600);
+}
+
+// ════════════════════════════════════════════════════
+//  DATE
+// ════════════════════════════════════════════════════
+function updateDate(){
+  const d=new Date();
+  const s=d.toLocaleDateString('vi-VN',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'});
+  document.getElementById('top-date').textContent=s;
+}
+
+// ════════════════════════════════════════════════════
+//  INSTALL BANNER (iOS)
+// ════════════════════════════════════════════════════
+function showInstallBanner(){
+  const wrap=document.getElementById('install-wrap');
+  const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isStandalone=window.navigator.standalone;
+  if(isIOS&&!isStandalone&&!sessionStorage.getItem('install-dismissed')){
+    wrap.innerHTML=`<div class="install-banner">
+      <span style="font-size:20px">📲</span>
+      <p>Thêm vào màn hình chính: nhấn <strong>Chia sẻ</strong> rồi chọn <strong>"Thêm vào Màn hình chính"</strong></p>
+      <button class="install-close" onclick="dismissInstall()">✕</button>
+    </div>`;
+  }
+}
+function dismissInstall(){
+  document.getElementById('install-wrap').innerHTML='';
+  sessionStorage.setItem('install-dismissed','1');
+}
+
+// ════════════════════════════════════════════════════
+//  SERVICE WORKER
+// ════════════════════════════════════════════════════
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('./sw.js').catch(()=>{});
+}
+
+// ════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════
+openDB().then(async ()=>{
+  await loadToday();
+  updateDate();
+  render();
+  showInstallBanner();
+}).catch(err=>{
+  // fallback if IndexedDB fails (e.g. private mode iOS)
+  secs=[...DEFAULT.map(s=>({...s,items:s.items.map(i=>({...i,done:false}))}))];
+  updateDate();
+  render();
+  showInstallBanner();
+  console.warn('IndexedDB unavailable, using memory',err);
+});
+</script>
+</body>
+</html>
